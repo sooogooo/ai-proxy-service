@@ -143,6 +143,45 @@ curl http://localhost:3000/health
 curl http://localhost:3000/ready
 ```
 
+### 监控端点
+
+```bash
+# Prometheus 指标
+curl http://localhost:3000/metrics
+
+# 熔断器状态
+curl http://localhost:3000/circuit-breakers
+```
+
+## 监控与可观测性
+
+### Prometheus 指标
+
+服务暴露以下 Prometheus 指标：
+
+| 指标名称 | 类型 | 说明 |
+|----------|------|------|
+| `http_requests_total` | Counter | HTTP 请求总数 |
+| `http_request_duration_seconds` | Histogram | HTTP 请求耗时 |
+| `proxy_requests_total` | Counter | 代理请求总数 |
+| `proxy_request_duration_seconds` | Histogram | 代理请求耗时 |
+| `proxy_errors_total` | Counter | 代理错误总数 |
+| `circuit_breaker_state` | Gauge | 熔断器状态 |
+| `active_connections` | Gauge | 活跃连接数 |
+
+### 熔断器
+
+每个代理服务都有独立的熔断器，用于保护系统免受级联故障影响：
+
+- **关闭状态 (Closed)**: 正常运行，请求正常转发
+- **半开状态 (Half-Open)**: 测试服务是否恢复
+- **打开状态 (Open)**: 服务不可用，快速失败
+
+配置参数：
+- 最大重试次数: 3
+- 连续失败触发熔断: 5
+- 半开等待时间: 30 秒
+
 ## 开发
 
 ### 项目结构

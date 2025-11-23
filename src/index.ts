@@ -5,8 +5,10 @@ import config from './config';
 import logger from './utils/logger';
 import { authMiddleware } from './middleware/auth';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
+import { metricsMiddleware } from './middleware/metrics';
 import { createProxy } from './proxy/createProxy';
 import healthRoutes from './routes/health';
+import metricsRoutes from './routes/metrics';
 
 const app = express();
 
@@ -26,8 +28,12 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Health check routes (no auth required)
+// Metrics middleware
+app.use(metricsMiddleware);
+
+// Health check and metrics routes (no auth required)
 app.use(healthRoutes);
+app.use(metricsRoutes);
 
 // Authentication middleware for proxy routes
 app.use('/openai', authMiddleware, createProxy(config.proxies.openai));
@@ -48,6 +54,9 @@ const server = app.listen(config.port, () => {
   logger.info(`  - /claude/* -> ${config.proxies.claude.target}`);
   logger.info(`  - /google/* -> ${config.proxies.google.target}`);
   logger.info(`  - /deepseek/* -> ${config.proxies.deepseek.target}`);
+  logger.info('Monitoring endpoints:');
+  logger.info('  - /metrics -> Prometheus metrics');
+  logger.info('  - /circuit-breakers -> Circuit breaker status');
 });
 
 // Graceful shutdown
